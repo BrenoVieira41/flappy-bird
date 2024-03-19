@@ -422,9 +422,7 @@ function record(score) {
   const currentThirdPlace = localStorage.getItem('thirdPlaceScore');
 
   if (!currentFirstPlace) {
-    localStorage.setItem('firstPlaceScore', score);
-    localStorage.setItem('secondPlaceScore', score);
-    localStorage.setItem('thirdPlaceScore', score);
+    return localStorage.setItem('firstPlaceScore', score);
   }
 
   if (score > parseInt(currentFirstPlace)) {
