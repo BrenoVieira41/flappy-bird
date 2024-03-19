@@ -1,5 +1,3 @@
-console.log('Criando joguinho!');
-
 const sprites = new Image();
 sprites.src = './sprites.png';
 
@@ -229,6 +227,69 @@ function createScoreboard() {
   return scoreboard;
 }
 
+function createMedal() {
+  let medal = {
+    sorceX: 0,
+    sorceY: 78,
+    width: 43,
+    height: 44,
+    x: (canvas.width / 2) - 134 / 2 - 20,
+    y: 138,
+    r: 20,
+
+    scoring: [
+      { sorceX: 0, sorceY: 78 },
+      { sorceX: 49, sorceY: 124 },
+      { sorceX: 49, sorceY: 78 },
+      { sorceX: 49, sorceY: 124 }
+    ],
+
+    chooseMedal() {
+      const firstPlaceScore = localStorage.getItem('firstPlaceScore');
+      const secondPlaceScore = localStorage.getItem('secondPlaceScore');
+      const thirdPlaceScore = localStorage.getItem('thirdPlaceScore');
+      const currentScore = globais.scoreboard.points;
+
+      let position = 0;
+
+      switch (true) {
+        case currentScore >= parseInt(firstPlaceScore):
+          position = 3;
+          break;
+        case currentScore >= parseInt(secondPlaceScore):
+          position = 2;
+          break;
+        case currentScore >= parseInt(thirdPlaceScore):
+          position = 1;
+          break;
+        default:
+          position = 0;
+          break;
+      }
+
+      return position;
+    },
+
+    drawing() {
+      let countMedal = medal.chooseMedal();
+      contex.beginPath();
+      contex.arc(medal.x + medal.width / 2, medal.y + medal.height / 2, 20, 0, Math.PI * 2);
+      contex.fill();
+      contex.closePath();
+      const { sorceX, sorceY } = medal.scoring[Number(countMedal)];
+
+      contex.drawImage(
+        sprites,
+        sorceX, sorceY,
+        medal.width, medal.height,
+        medal.x, medal.y,
+        medal.width, medal.height,
+      );
+    }
+  };
+  return medal;
+}
+
 function createScoreboardGameOver() {
   const scoreboard = {
     drawing() {
@@ -240,7 +301,7 @@ function createScoreboardGameOver() {
       contex.font = '25px "Lexend", sans-serif';
       contex.textAlign = 'center'
       contex.fillStyle = 'black';
-      contex.fillText(`${localStorage.getItem('score')}`, canvas.width - 88, 190);
+      contex.fillText(`${localStorage.getItem('firstPlaceScore')}`, canvas.width - 88, 190);
     },
   }
   return scoreboard;
@@ -356,10 +417,28 @@ const screens = {
 };
 
 function record(score) {
-  const currentRecord = localStorage.getItem('score');
+  const currentFirstPlace = localStorage.getItem('firstPlaceScore');
+  const currentSecondPlace = localStorage.getItem('secondPlaceScore');
+  const currentThirdPlace = localStorage.getItem('thirdPlaceScore');
 
-  if (!currentRecord || score > parseInt(currentRecord)) {
-    localStorage.setItem('score', score);
+  if (!currentFirstPlace) {
+    localStorage.setItem('firstPlaceScore', score);
+    localStorage.setItem('secondPlaceScore', score);
+    localStorage.setItem('thirdPlaceScore', score);
+  }
+
+  if (score > parseInt(currentFirstPlace)) {
+    localStorage.setItem('secondPlaceScore', parseInt(currentFirstPlace));
+    return localStorage.setItem('firstPlaceScore', score);
+  }
+
+  if (!currentSecondPlace || score > parseInt(currentSecondPlace)) {
+    localStorage.setItem('thirdPlaceScore', parseInt(currentSecondPlace));
+    return localStorage.setItem('secondPlaceScore', score);
+  }
+
+  if (!currentThirdPlace || score > parseInt(currentThirdPlace)) {
+    return localStorage.setItem('thirdPlaceScore', score);
   }
 }
 
@@ -367,12 +446,13 @@ screens.game = {
   initialize() {
     globais.scoreboard = createScoreboard();
   },
+
   drawing() {
     background.drawing();
     globais.pipes.drawing();
     globais.floor.drawing();
     globais.bird.drawing();
-    globais.scoreboard.drawing()
+    globais.scoreboard.drawing();
   },
 
   click() {
@@ -390,12 +470,14 @@ screens.game = {
 screens.game_over = {
   initialize() {
     globais.scoreboardEnd = createScoreboardGameOver();
-    record(globais.scoreboard.points)
+    record(globais.scoreboard.points);
+    globais.medal = createMedal();
   },
 
   drawing() {
     endGame.drawing();
     globais.scoreboardEnd.drawing();
+    globais.medal.drawing();
   },
 
   update() {
